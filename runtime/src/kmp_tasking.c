@@ -609,7 +609,6 @@ __kmp_task_finish( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t *resumed_tas
 #if OMPT_SUPPORT
     if ((ompt_status == ompt_status_track_callback) &&
         ompt_callbacks.ompt_callback(ompt_event_task_end)) {
-        kmp_taskdata_t *parent = taskdata->td_parent;
         ompt_callbacks.ompt_callback(ompt_event_task_end)(
             taskdata->ompt_task_info.task_id);
     }

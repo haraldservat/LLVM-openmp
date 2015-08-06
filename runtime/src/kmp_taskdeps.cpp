@@ -19,6 +19,10 @@
 #include "kmp_io.h"
 #include "kmp_wait_release.h"
 
+#if OMPT_SUPPORT
+#include "ompt-specific.h"
+#endif
+
 #if OMP_40_ENABLED
 
 //TODO: Improve memory allocation? keep a list of pre-allocated structures? allocate in blocks? re-use list finished list entries?
@@ -196,13 +200,37 @@ __kmp_depnode_list_free ( kmp_info_t *thread, kmp_depnode_list *list )
 }
 
 static inline void
-__kmp_track_dependence ( kmp_depnode_t *source, kmp_depnode_t *sink )
+__kmp_track_dependence (const kmp_depend_info_t * dep,
+	 kmp_depnode_t *source, kmp_depnode_t *sink )
 {
 #ifdef KMP_SUPPORT_GRAPH_OUTPUT
     kmp_taskdata_t * task_source = KMP_TASK_TO_TASKDATA(source->dn.task);
     kmp_taskdata_t * task_sink = KMP_TASK_TO_TASKDATA(sink->dn.task);    // this can be NULL when if(0) ...
 
     __kmp_printf("%d(%s) -> %d(%s)\n", source->dn.id, task_source->td_ident->psource, sink->dn.id, task_sink->td_ident->psource);
+#endif
+#ifdef OMPT_SUPPORT
+	/* HSG
+	   OMPT tracks dependences between task (a=source, b=sink) in which
+	   task a blocks the execution of b through the ompt_new_dependence_callback */
+	if ((ompt_status == ompt_status_track_callback) &&
+		ompt_callbacks.ompt_callback(ompt_event_task_dependence)) {
+# error "HARALD, fixme!"
+		ompt_task_dependence_type_t type;
+		if (dep->in && dep->out)
+			type = ompt_task_dependence_inout;
+		else if (dep->out)
+			type = ompt_task_dependence_out;
+		else if (dep->in)
+			type = ompt_task_dependence_in;
+		kmp_taskdata_t * task_source = KMP_TASK_TO_TASKDATA(source->dn.task);
+		kmp_taskdata_t * task_sink = KMP_TASK_TO_TASKDATA(sink->dn.task);
+		ompt_callbacks.ompt_callback(ompt_event_task_dependence)(
+		  task_source->ompt_task_info.task_id,
+		  task_sink->ompt_task_info.task_id,
+		  type,
+		  dep->base_addr);
+    }
 #endif
 }
 
@@ -231,7 +259,7 @@ __kmp_process_deps ( kmp_int32 gtid, kmp_depnode_t *node, kmp_dephash_t *hash,
                 if ( indep->dn.task ) {
                     KMP_ACQUIRE_DEPNODE(gtid,indep);
                     if ( indep->dn.task ) {
-                        __kmp_track_dependence(indep,node);
+                        __kmp_track_dependence(dep, indep,node);
                         indep->dn.successors = __kmp_add_node(thread, indep->dn.successors, node);
                         KA_TRACE(40,("__kmp_process_deps<%d>: T#%d adding dependence from %p to %p",
                                  filter,gtid, KMP_TASK_TO_TASKDATA(indep->dn.task), KMP_TASK_TO_TASKDATA(node->dn.task)));
@@ -247,7 +275,7 @@ __kmp_process_deps ( kmp_int32 gtid, kmp_depnode_t *node, kmp_dephash_t *hash,
         } else if ( last_out && last_out->dn.task ) {
             KMP_ACQUIRE_DEPNODE(gtid,last_out);
             if ( last_out->dn.task ) {
-                __kmp_track_dependence(last_out,node);
+                __kmp_track_dependence(dep, last_out,node);
                 last_out->dn.successors = __kmp_add_node(thread, last_out->dn.successors, node);
                 KA_TRACE(40,("__kmp_process_deps<%d>: T#%d adding dependence from %p to %p", 
                              filter,gtid, KMP_TASK_TO_TASKDATA(last_out->dn.task), KMP_TASK_TO_TASKDATA(node->dn.task)));

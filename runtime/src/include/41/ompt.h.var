@@ -171,7 +171,10 @@
     macro (ompt_event_destroy_lock,             ompt_wait_callback_t,          59) /* lock destruction */       \
     macro (ompt_event_destroy_nest_lock,        ompt_wait_callback_t,          60) /* nest lock destruction */  \
                                                                                                                 \
-    macro (ompt_event_flush,                    ompt_callback_t,               61) /* after executing flush */
+    macro (ompt_event_flush,                    ompt_callback_t,               61) /* after executing flush */  \
+                                                                                                                \
+    macro (ompt_event_task_dependence,          ompt_event_task_dependence_callback_t, 62)                      \
+                                                                                   /* track a new dependency */ 
 
 
 
@@ -332,6 +335,20 @@ typedef void (*ompt_control_callback_t) (
 );
 
 typedef void (*ompt_callback_t)(void);
+
+typedef enum ompt_task_dependence_type_e {
+	ompt_task_dependence_in = 1,
+	ompt_task_dependence_out = 2,
+	ompt_task_depenence_inout = 3
+} ompt_task_dependence_type_t;
+
+typedef void (*ompt_event_task_dependence_callback_t) (
+	/* to track a new dependency between two tasks */
+	ompt_task_id_t pred_task_id,      /* ID of predecessor task       */
+	ompt_task_id_t succ_task_id,      /* ID of successor task         */
+    ompt_task_dependence_type_t type, /* Type of dependece            */
+    void *data                        /* Pointer to related data      */
+);
 
 
 /****************************************************************************
