@@ -141,6 +141,6 @@
 
 #define ompt_event_flush_implemented                    ompt_event_UNIMPLEMENTED
 
-#define ompt_event_task_dependence                      ompt_event_MAY_ALWAYS_TRACE
+#define ompt_event_task_dependence_implemented          ompt_event_MAY_ALWAYS_TRACE
 
 #endif
