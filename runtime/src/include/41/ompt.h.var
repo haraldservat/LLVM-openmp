@@ -339,7 +339,7 @@ typedef void (*ompt_callback_t)(void);
 typedef enum ompt_task_dependence_type_e {
 	ompt_task_dependence_in = 1,
 	ompt_task_dependence_out = 2,
-	ompt_task_depenence_inout = 3
+	ompt_task_dependence_inout = 3
 } ompt_task_dependence_type_t;
 
 typedef void (*ompt_event_task_dependence_callback_t) (

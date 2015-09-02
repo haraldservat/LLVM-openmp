@@ -213,15 +213,14 @@ __kmp_track_dependence (const kmp_depend_info_t * dep,
 	/* HSG
 	   OMPT tracks dependences between task (a=source, b=sink) in which
 	   task a blocks the execution of b through the ompt_new_dependence_callback */
-	if ((ompt_status == ompt_status_track_callback) &&
+    if ((ompt_status & ompt_status_track) &&
 		ompt_callbacks.ompt_callback(ompt_event_task_dependence)) {
-# error "HARALD, fixme!"
 		ompt_task_dependence_type_t type;
-		if (dep->in && dep->out)
+		if (dep->flags.in && dep->flags.out)
 			type = ompt_task_dependence_inout;
-		else if (dep->out)
+		else if (dep->flags.out)
 			type = ompt_task_dependence_out;
-		else if (dep->in)
+		else if (dep->flags.in)
 			type = ompt_task_dependence_in;
 		kmp_taskdata_t * task_source = KMP_TASK_TO_TASKDATA(source->dn.task);
 		kmp_taskdata_t * task_sink = KMP_TASK_TO_TASKDATA(sink->dn.task);
@@ -229,7 +228,7 @@ __kmp_track_dependence (const kmp_depend_info_t * dep,
 		  task_source->ompt_task_info.task_id,
 		  task_sink->ompt_task_info.task_id,
 		  type,
-		  dep->base_addr);
+		  (void*)dep->base_addr);
     }
 #endif
 }
